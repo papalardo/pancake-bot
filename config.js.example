@@ -1,0 +1,25 @@
+import ADDRESSES from './addresses.js';
+
+export default {
+    // Wallet
+    MNEMONIC: '',
+
+    // Tokens
+    INPUT_TOKEN_ADDRESS: ADDRESSES.WBNB,
+    OUTPUT_TOKEN_ADDRESS: ADDRESSES.BUSD,
+
+    // Buy
+    AMOUNT_BUY: 0.0001,
+
+    // Slippage
+    SLIPPAGE_TYPE: 'percent', // 'absolute',
+    SLIPPAGE_VALUE: 0.1,
+
+    // Anothers
+    PROVIDER_URL: 'https://bsc-dataseed.binance.org',
+    CHECK_BALANCE: true,
+    CHECK_TOKEN_APPROVED: true,
+    SHOW_TOKENS_PRICE: false, // Perde perfomance, somente caso queria um feedback visual dos preços
+    CHECK_GAS: false, // Checa se tem algum erro no contrato antes de executa-lo,
+    ENABLE_SWAP: true, // Habilita o swap dos tokens. Usado mais para testes
+}
