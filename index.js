@@ -1,4 +1,8 @@
 import ethers from 'ethers';
+import {
+    questionBuyTokenAddress,
+    questionPaymentTokenAddress
+} from './questions.js';
 
 import PancakeSwapRouterV2ABI from './abi/pancake_swap_router_v2.json';
 import PancakeSwapFactoryABI from './abi/pancake_swap_factory.json';
@@ -16,6 +20,13 @@ const pancakeSwapFactoryContract = new ethers.Contract(ADDRESSES.FACTORY, Pancak
 
 const createTokenContract = (tokenAddress) => new ethers.Contract(tokenAddress, PancakeSwapPairABI, account);
 
+console.log('\n\n\n');
+
+const userInput = async () => {
+    CONFIG.INPUT_TOKEN_ADDRESS = await questionPaymentTokenAddress();
+    CONFIG.OUTPUT_TOKEN_ADDRESS = await questionBuyTokenAddress();
+}
+
 const getPairContract = async (token0, token1) => {
     const pairAddress = await pancakeSwapFactoryContract.getPair(token0, token1);
     if (pairAddress === '0x0000000000000000000000000000000000000000') {
@@ -24,7 +35,7 @@ const getPairContract = async (token0, token1) => {
     return new ethers.Contract(pairAddress, PancakeSwapPairABI, account);
 }
 
-const checkTokenIsApproved = async (tokenAddress, amount) => {
+const approveTokenIfAbsent = async (tokenAddress, amount) => {
     const tokenContract = createTokenContract(tokenAddress);
     const approved = await tokenContract.allowance(wallet.address, ADDRESSES.ROUTER);
 
@@ -36,7 +47,10 @@ const checkTokenIsApproved = async (tokenAddress, amount) => {
         const tx = await tokenContract.approve(ADDRESSES.ROUTER, ethers.utils.parseEther('1000000000000'));
         const receipt = await tx.wait();
         console.log('Token aprovado: ', receipt.transactionHash);
+        return;
     }
+
+    console.log('Token já aprovado');
 }
 
 const getTokenPrice = async (token0, token1) => {
@@ -138,6 +152,11 @@ let bought = false;
 const runJobSwap = async () => {
     let minAmountToReceived = await getMinAmountToReceive();
 
+    if (minAmountToReceived <= 0) {
+        console.log('Não há liquidez no par..');
+        return;
+    }
+
     if (minAmountToReceived > 0 && CONFIG.ENABLE_SWAP) {
         if (CONFIG.CHECK_GAS) {
             console.log('Calculando taxa de gas...');
@@ -153,12 +172,14 @@ const runJobSwap = async () => {
 }
 
 const main = async () => {
+    await userInput();
+
     if (CONFIG.SHOW_TOKENS_PRICE) {
         await showTokensPrice(CONFIG.INPUT_TOKEN_ADDRESS, CONFIG.OUTPUT_TOKEN_ADDRESS);
     }
 
     if (CONFIG.CHECK_TOKEN_APPROVED) {
-        await checkTokenIsApproved(CONFIG.INPUT_TOKEN_ADDRESS, 1000);
+        await approveTokenIfAbsent(CONFIG.INPUT_TOKEN_ADDRESS, 1000);
     }
 
     if (CONFIG.CHECK_BALANCE) {
